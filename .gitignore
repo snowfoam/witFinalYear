@@ -1,0 +1,7 @@
+# back-end
+/server/node_modules
+/server/package-lock.json
+
+# front-end
+/web/node_modules
+/web/package-lock.json
