@@ -6,6 +6,7 @@ var SubjectSchema = new Schema({
         unique: true,
         type: String
     },
+    subjectCode: String,
 })
 
 mongoose.model('Subject', SubjectSchema)

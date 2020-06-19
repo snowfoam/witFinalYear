@@ -23,3 +23,13 @@ exports.normalizePort = (val) => {
 
     return false;
 }
+
+exports.randomString = function () {
+    var str = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz'
+    var res = '';
+    for (i = 0; i < 5; i++) {
+        res += str.charAt(Math.floor(Math.random() * str.length));
+    }
+
+    return res;
+}
