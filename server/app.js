@@ -12,7 +12,8 @@ var bootstrap = async () => {
   var db = await connect()
 
   var indexRouter = require('./routes/index');
-  var userRouter = require('./routes/user');
+  var teacherRouter = require('./routes/teacher');
+  var studentRouter = require('./routes/student');
 
   var app = express();
 
@@ -27,7 +28,8 @@ var bootstrap = async () => {
   app.use(express.static(path.join(__dirname, 'public')));
 
   app.use('/', indexRouter);
-  app.use('/user', userRouter);
+  app.use('/teacher', teacherRouter);
+  app.use('/student', studentRouter);
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {

@@ -5,12 +5,8 @@ var ObjectId = Schema.Types.ObjectId
 var QuestionSchema = new Schema({
     type: String, // single | multiple | trueOrFalse
     article: String,
-    options: [{
-        type: String | Number | Boolean,
-    }],
-    answer: [{
-        type: String | Number | Boolean,
-    }],
+    options: Schema.Types.Mixed,
+    answer: Schema.Types.Mixed,
     subjectId: {
         type: ObjectId,
         ref: 'Subject'

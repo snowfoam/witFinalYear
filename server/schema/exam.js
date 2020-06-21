@@ -1,6 +1,5 @@
 var mongoose = require('mongoose')
 var Schema = mongoose.Schema
-var ObjectId = Schema.Types.ObjectId
 
 var ExamSchema = new Schema({
     studentId: String,
@@ -14,14 +13,9 @@ var ExamSchema = new Schema({
         type: Number,
         default: 60 // minutes
     },
-    details: [{
-        questionId: {
-            type: ObjectId,
-            ref: 'Question'
-        },
-        anwser: {
-            type: String | Number | Boolean
-        }
+    questions: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Question'
     }]
 })
 
