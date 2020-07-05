@@ -11,45 +11,18 @@ const objEqual = (obj1, obj2) => {
   else return !keysArr1.some(key => obj1[key] != obj2[key])
 }
 
-
-export const setToken = (token) => {
-  Cookies.set(TOKEN_KEY, token, { expires: 1 })
+export const setToken = (data) => {
+  if (data) {
+    const { token, expiresIn } = data
+    Cookies.set(TOKEN_KEY, token, { expires: expiresIn / (24 * 60 * 60) })
+  } else {
+    Cookies.remove(TOKEN_KEY)
+  }
 }
 
 export const getToken = () => {
   const token = Cookies.get(TOKEN_KEY)
-  if (token) return token
-  else return false
-}
-
-export const getHomeRoute = (routers, homeName = 'home') => {
-  let i = -1
-  let len = routers.length
-  let homeRoute = {}
-  while (++i < len) {
-    let item = routers[i]
-    if (item.children && item.children.length) {
-      let res = getHomeRoute(item.children, homeName)
-      if (res.name) return res
-    } else {
-      if (item.name === homeName) homeRoute = item
-    }
-  }
-  return homeRoute
-}
-
-export const canTurnTo = (name, access, routes) => {
-  const routePermissionJudge = (list) => {
-    return list.some(item => {
-      if (item.children && item.children.length) {
-        return routePermissionJudge(item.children)
-      } else if (item.name === name) {
-        return hasAccess(access, item)
-      }
-    })
-  }
-
-  return routePermissionJudge(routes)
+  return token ? token : null
 }
 
 export const routeEqual = (route1, route2) => {

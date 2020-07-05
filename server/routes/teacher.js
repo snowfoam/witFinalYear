@@ -74,6 +74,23 @@ router.post('/login', async (req, res) => {
 });
 
 /**
+ * /teacher/getInfo
+ */
+router.get('/getInfo', authTeacher, async (req, res) => {
+  var { _id } = req.body
+  var teacher = await Teacher.findOne({ _id })
+
+  if (teacher && teacher._id) {
+    var { _id, email, name, courses } = teacher
+    return res.json({
+      data: { _id, email, name, courses }
+    })
+  }
+
+  return res.status(401).json({ error: true, message: "get info error" })
+});
+
+/**
  * /teacher/subject/create
  * Create a new subject
  */

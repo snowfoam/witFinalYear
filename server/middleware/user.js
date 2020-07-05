@@ -2,7 +2,7 @@ var jwt = require('jsonwebtoken')
 var { secretkey } = require('../shared/constant')
 
 function authUser(req, res, next, userType) {
-    const token = req.headers.Authorization || req.headers.authorization
+    const token = req.cookies.token
     if (!token) {
         return res.status(403).json({ error: true, message: 'not authorized.' })
     }

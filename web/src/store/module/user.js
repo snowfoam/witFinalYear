@@ -1,71 +1,69 @@
-import {
-  login,
-  logout,
-  getUserInfo,
-} from '@/api/user'
+import { login, register, logout, getUserInfo } from '@/api/user'
 import { setToken, getToken } from '@/libs/util'
 
 export default {
   state: {
-    userName: '',
-    userId: '',
+    userType: 'student',
+    userInfo: null,
+    hasUserInfo: false,
     token: getToken(),
   },
   mutations: {
-    setUserId(state, id) {
-      state.userId = id
+    setUserType(state, userType) {
+      state.userType = userType
     },
-    setUserName(state, name) {
-      state.userName = name
+    setToken(state, data) {
+      setToken(data)
     },
-    setToken(state, token) {
-      state.token = token
-      setToken(token)
+    setUserInfo(state, data) {
+      state.hasUserInfo = true
+      state.userInfo = data
     },
   },
   actions: {
-    handleLogin({ commit }, { userName, password }) {
-      userName = userName.trim()
-      return new Promise((resolve, reject) => {
-        login({
-          userName,
-          password
-        }).then(res => {
-          const data = res.data
-          commit('setToken', data.token)
-          resolve()
-        }).catch(err => {
-          reject(err)
-        })
-      })
+    // login and set token
+    async handleLogin({ commit }, params) {
+      try {
+        const { data } = await login(params)
+        commit('setToken', data)
+        commit('setUserType', params.userType)
+
+        return { success: true }
+      } catch (err) {
+        return { success: false, message: err.message }
+      }
     },
 
-    handleLogOut({ state, commit }) {
-      return new Promise((resolve, reject) => {
-        logout(state.token).then(() => {
-          commit('setToken', '')
-          resolve()
-        }).catch(err => {
-          reject(err)
-        })
-      })
+    // register
+    async handleRegister({ }, params) {
+      try {
+        const { data } = await register(params)
+        return { success: true }
+      } catch (err) {
+        return { success: false, message: err.message }
+      }
     },
 
-    getUserInfo({ state, commit }) {
-      return new Promise((resolve, reject) => {
-        try {
-          getUserInfo(state.token).then(res => {
-            const data = res.data
-            commit('setUserName', data.name)
-            commit('setUserId', data.user_id)
-            resolve(data)
-          }).catch(err => {
-            reject(err)
-          })
-        } catch (error) {
-          reject(error)
-        }
-      })
-    }
+    // get user's info
+    async getUserInfo({ commit }) {
+      try {
+        const { data } = await getUserInfo()
+        commit('setUserInfo', data)
+        return { success: true }
+      } catch (err) {
+        return { success: false, message: err.message }
+      }
+    },
+
+    // user logout
+    async handleLogOut({ commit }) {
+      try {
+        await logout()
+        commit('setToken', null)
+        return { success: true }
+      } catch (err) {
+        return { success: false, message: err.message }
+      }
+    },
   }
 }

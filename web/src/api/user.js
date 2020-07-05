@@ -1,31 +1,39 @@
 import axios from '@/libs/axios'
+import store from '@/store'
 
-export const login = ({ userName, password }) => {
-  const data = {
-    userName,
-    password
-  }
+export const login = ({ userType, email, password }) => {
   return axios.request({
-    url: 'login',
-    data,
-    method: 'post'
-  })
-}
-
-export const getUserInfo = (token) => {
-  return axios.request({
-    url: 'get_info',
-    params: {
-      token
+    url: `/${userType}/login`,
+    data: {
+      email,
+      password
     },
-    method: 'get'
+    method: 'post'
   })
 }
 
-export const logout = (token) => {
+export const register = ({ userType, email, password, firstName, lastName }) => {
   return axios.request({
-    url: 'logout',
+    url: `/${userType}/register`,
+    data: {
+      email,
+      password,
+      firstName,
+      lastName
+    },
     method: 'post'
+  })
+}
+
+export const getUserInfo = () => {
+  return axios.request({
+    url: `/${store.state.user.userType}/getInfo`,
+  })
+}
+
+export const logout = () => {
+  return axios.request({
+    url: 'logout'
   })
 }
 
