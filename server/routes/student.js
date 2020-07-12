@@ -19,9 +19,9 @@ var Exam = mongoose.model('Exam')
 router.post('/register', async (req, res) => {
   var { email, password, firstName, lastName } = req.body
   if (!(email && password)) {
-    return res.status(400).json({ error: true, message: "No email or password!" })
+    return res.status(400).json({ success: false, message: "No email or password!" })
   } else if (await Student.findOne({ email })) {
-    return res.status(409).json({ error: true, message: "Student already exists!" })
+    return res.status(409).json({ success: false, message: "Student already exists!" })
   }
 
   var option = {
@@ -40,7 +40,7 @@ router.post('/register', async (req, res) => {
   if (student && student._id) {
     return res.status(201).json({ success: true, message: "Student registered" })
   }
-  return res.status(400).json({ error: true, message: 'Register failed' });
+  return res.status(400).json({ success: false, message: 'Register failed' });
 });
 
 /**
@@ -61,7 +61,7 @@ router.post('/login', async (req, res) => {
     })
   }
 
-  return res.status(401).json({ error: true, message: 'Wrong email or password' })
+  return res.status(401).json({ success: false, message: 'Wrong email or password' })
 });
 
 /**
@@ -72,13 +72,26 @@ router.get('/getInfo', authStudent, async (req, res) => {
   var student = await Student.findOne({ _id })
 
   if (student && student._id) {
-    var { _id, email, name, courses } = student
+    var { _id, email, name, courses, exams } = student
     return res.json({
-      data: { _id, email, name, courses }
+      data: { _id, email, name, courses, exams }
     })
   }
 
-  return res.status(401).json({ error: true, message: "get info error" })
+  return res.status(401).json({ success: false, message: "get info error" })
+});
+
+/**
+ * /student/exam/query
+ * student query exams
+ */
+router.get('/exam/query', authStudent, async (req, res) => {
+  var { _id } = req.body
+  var student = await Student.findOne({ _id })
+  var data = await Promise.all(student.exams.map(item => new Promise((resolve, reject) => {
+    Exam.findOne({ _id: item }).then(exam => { resolve(exam) }).catch(e => reject(e.message))
+  })))
+  return res.status(200).json({ success: true, data, message: "" })
 });
 
 /**
@@ -95,6 +108,9 @@ router.post('/exam/apply', authStudent, async (req, res) => {
     studentId: _id,
     courseId,
     createTime: new Date().getTime(),
+    beginTime: null,
+    endTime: null,
+    score: null,
     status: 'nostart',
     duration: 60,
     questions: sampleSize(questions, 10)
@@ -108,7 +124,23 @@ router.post('/exam/apply', authStudent, async (req, res) => {
     return res.status(201).json({ success: true, message: "Exam applied" })
   }
 
-  return res.status(401).json({ error: true, message: 'Apply exam failed' })
+  return res.status(401).json({ success: false, message: 'Apply exam failed' })
+});
+
+/**
+ * /student/exam/cancle
+ * student cancle an exam
+ */
+router.post('/exam/cancle', authStudent, async (req, res) => {
+  var { _id, examId } = req.body
+  var exam = await Exam.findOne({ _id: examId })
+  if (exam && exam._id) {
+    exam.status = 'cancled'
+    await exam.save()
+    return res.status(200).json({ success: true, message: "Exam cancled" })
+  }
+
+  return res.status(500).json({ success: false, message: 'cancle exam failed' })
 });
 
 module.exports = router;

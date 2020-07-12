@@ -33,7 +33,8 @@ export const getUserInfo = () => {
 
 export const logout = () => {
   return axios.request({
-    url: 'logout'
+    url: 'logout',
+    method: 'post'
   })
 }
 

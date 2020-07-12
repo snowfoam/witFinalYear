@@ -7,7 +7,7 @@ var ExamSchema = new Schema({
     createTime: Date,
     beginTime: Date,
     endTime: Date,
-    status: String, // nostart | processing | ended
+    status: String, // nostart | processing | ended | cancled
     score: Number,
     duration: {
         type: Number,

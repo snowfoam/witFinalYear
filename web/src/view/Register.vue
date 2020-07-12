@@ -1,58 +1,46 @@
 <template>
-  <div class="login">
-    <div class="login-con">
-      <Card
-        icon="log-in"
-        title="Online Examination System - Register"
-        :bordered="false"
-        :shadow="false"
-        :dis-hover="true"
-      >
-        <Form
-          ref="formCustom"
-          :model="formCustom"
-          :rules="ruleCustom"
-          :label-width="160"
-          class="card-form"
+  <div class="register">
+    <Form
+      ref="formCustom"
+      :model="formCustom"
+      :rules="ruleCustom"
+      :label-width="160"
+      class="card-form"
+    >
+      <FormItem prop="userType" label="User Type">
+        <Select
+          v-model="formCustom.userType"
+          placeholder="please select user type"
         >
-          <FormItem prop="userType" label="User Type">
-            <Select
-              v-model="formCustom.userType"
-              placeholder="please select user type"
-            >
-              <Option value="teacher">teacher</Option>
-              <Option value="student">student</Option>
-            </Select>
-          </FormItem>
-          <FormItem prop="firstName" label="First Name">
-            <Input v-model="formCustom.firstName" placeholder="first name">
-            </Input>
-          </FormItem>
-          <FormItem prop="lastName" label="Last Name">
-            <Input v-model="formCustom.lastName" placeholder="last name">
-            </Input>
-          </FormItem>
-          <FormItem prop="email" label="Email">
-            <Input v-model="formCustom.email" placeholder="email"> </Input>
-          </FormItem>
-          <FormItem label="Password" prop="password">
-            <Input type="password" v-model="formCustom.password"></Input>
-          </FormItem>
-          <FormItem label="Password Confirm" prop="passwdCheck">
-            <Input type="password" v-model="formCustom.passwdCheck"></Input>
-          </FormItem>
+          <Option value="teacher">teacher</Option>
+          <Option value="student">student</Option>
+        </Select>
+      </FormItem>
+      <FormItem prop="firstName" label="First Name">
+        <Input v-model="formCustom.firstName" placeholder="first name"> </Input>
+      </FormItem>
+      <FormItem prop="lastName" label="Last Name">
+        <Input v-model="formCustom.lastName" placeholder="last name"> </Input>
+      </FormItem>
+      <FormItem prop="email" label="Email">
+        <Input v-model="formCustom.email" placeholder="email"> </Input>
+      </FormItem>
+      <FormItem label="Password" prop="password">
+        <Input type="password" v-model="formCustom.password"></Input>
+      </FormItem>
+      <FormItem label="Password Confirm" prop="passwdCheck">
+        <Input type="password" v-model="formCustom.passwdCheck"></Input>
+      </FormItem>
 
-          <FormItem>
-            <Button type="primary" @click="handleSubmit('formCustom')"
-              >Register</Button
-            >
-            <Button @click="handleReset('formCustom')" style="margin-left: 8px"
-              >Reset</Button
-            >
-          </FormItem>
-        </Form>
-      </Card>
-    </div>
+      <FormItem>
+        <Button @click="handleReset('formCustom')" style="margin-right: 8px"
+          >Reset</Button
+        >
+        <Button type="primary" @click="handleSubmit('formCustom')"
+          >Register</Button
+        >
+      </FormItem>
+    </Form>
   </div>
 </template>
 
@@ -155,7 +143,7 @@ export default {
 };
 </script>
 <style scoped>
-.card-form {
+.register {
   width: 600px;
 }
 </style>

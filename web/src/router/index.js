@@ -16,26 +16,24 @@ router.beforeEach(async (to, from, next) => {
 
   const token = getToken()
   const allowed = to.name === 'login' || to.name === 'register'
-  // no login
-  if (!token && !allowed ) {
-    next({ name: 'login' })
-  } else if (!token && allowed) {
-    next()
-  } else if (token && to.name === 'login') {
-    next({ name: 'home' })
-    // no user info
-  } else if (!store.state.user.hasUserInfo) {
-    try {
-      // get user info
-      await store.dispatch('getUserInfo')
-    } catch (e) {
-      // reset token and to login page
-      setToken()
-      next({ name: 'login' })
-    }
-    // access
+
+  if (!token) { // no login
+    if (!allowed) next({ name: 'login' })
+    else next()
   } else {
-    next()
+    if (to.name === 'login') {
+      next({ name: 'home' })
+    } else if (!store.state.user.hasUserInfo) {  // no user info
+      try {
+        await store.dispatch('getUserInfo') // get user info
+        next()
+      } catch (e) {
+        setToken() // reset token and to login page
+        next({ name: 'login' })
+      }
+    } else {
+      next() // access
+    }
   }
 })
 

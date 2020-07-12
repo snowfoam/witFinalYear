@@ -16,8 +16,13 @@ export default {
       setToken(data)
     },
     setUserInfo(state, data) {
-      state.hasUserInfo = true
-      state.userInfo = data
+      if (data) {
+        state.hasUserInfo = true
+        state.userInfo = data.data
+      } else {
+        state.hasUserInfo = false
+        state.userInfo = null
+      }
     },
   },
   actions: {
@@ -56,9 +61,10 @@ export default {
     },
 
     // user logout
-    async handleLogOut({ commit }) {
+    async handleLogOut({ commit, state }) {
       try {
         await logout()
+        commit('setUserInfo', null)
         commit('setToken', null)
         return { success: true }
       } catch (err) {
