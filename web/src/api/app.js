@@ -97,9 +97,29 @@ export const getExams = (data) => {
     url: '/student/exam/query'
   })
 }
+export const getExamById = (params) => {
+  return axios.request({
+    url: '/student/exam/queryById',
+    params
+  })
+}
 export const applyExam = (data) => {
   return axios.request({
     url: '/student/exam/apply',
+    data,
+    method: 'post'
+  })
+}
+export const startExam = (data) => {
+  return axios.request({
+    url: '/student/exam/start',
+    data,
+    method: 'post'
+  })
+}
+export const examSubmit = (data) => {
+  return axios.request({
+    url: '/student/exam/submit',
     data,
     method: 'post'
   })

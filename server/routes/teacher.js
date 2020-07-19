@@ -29,9 +29,9 @@ async function checkCourseName(subjectCode) {
 router.post('/register', async (req, res) => {
   var { email, password, firstName, lastName } = req.body
   if (!(email && password)) {
-    return res.status(400).json({ success: false, message: "No email or password!" })
+    return res.json({ success: false, message: "No email or password!" })
   } else if (await Teacher.findOne({ email })) {
-    return res.status(409).json({ success: false, message: "Teacher already exists!" })
+    return res.json({ success: false, message: "Teacher already exists!" })
   }
 
   var option = {
@@ -46,9 +46,9 @@ router.post('/register', async (req, res) => {
 
   var teacher = await new Teacher(option).save()
   if (teacher && teacher._id) {
-    return res.status(201).json({ success: true, message: "Teacher registered" })
+    return res.json({ success: true, message: "Teacher registered" })
   }
-  return res.status(400).json({ success: false, message: 'Register failed' });
+  return res.json({ success: false, message: 'Register failed' });
 });
 
 
@@ -70,7 +70,7 @@ router.post('/login', async (req, res) => {
     })
   }
 
-  return res.status(401).json({ success: false, message: 'Wrong email or password' })
+  return res.json({ success: false, message: 'Wrong email or password' })
 });
 
 /**
@@ -87,7 +87,7 @@ router.get('/getInfo', authTeacher, async (req, res) => {
     })
   }
 
-  return res.status(401).json({ success: false, message: "get info error" })
+  return res.json({ success: false, message: "get info error" })
 });
 
 /**
@@ -98,16 +98,16 @@ router.post('/subject/create', authTeacher, async function (req, res) {
   var { subjectName, subjectCode } = req.body
 
   if (await Subject.findOne({ subjectName })) {
-    return res.status(409).json({ success: false, message: "Subject already exists!" })
+    return res.json({ success: false, message: "Subject already exists!" })
   }
 
   var subject = await new Subject({ subjectName, subjectCode }).save()
 
   if (subject && subject._id) {
-    return res.status(201).json({ success: true, message: "Subject created" })
+    return res.json({ success: true, message: "Subject created" })
   }
 
-  return res.status(400).json({ success: false, message: 'Create subject failed' });
+  return res.json({ success: false, message: 'Create subject failed' });
 });
 
 /**
@@ -119,14 +119,14 @@ router.post('/subject/update', authTeacher, async function (req, res) {
 
   var subject = await Subject.findOne({ _id: subjectId })
   if (!subject) {
-    return res.status(400).json({ success: false, message: "Subject not found!" })
+    return res.json({ success: false, message: "Subject not found!" })
   }
 
   subject.subjectCode = subjectCode
   subject.subjectName = subjectName
 
   await subject.save()
-  return res.status(200).json({ success: true, message: 'subject updated' });
+  return res.json({ success: true, message: 'subject updated' });
 });
 /**
  * /teacher/subject/remove
@@ -138,15 +138,15 @@ router.post('/subject/remove', authTeacher, async function (req, res) {
   var subject = await Subject.findOne({ _id: subjectId })
 
   if (!subject) {
-    return res.status(400).json({ success: false, message: "Subject not found!" })
+    return res.json({ success: false, message: "Subject not found!" })
   }
 
   var { deletedCount } = await Subject.deleteOne({ _id: subjectId })
   if (deletedCount === 1) {
-    return res.status(200).json({ success: true, message: "Subject removed." })
+    return res.json({ success: true, message: "Subject removed." })
   }
 
-  return res.status(500).json({ success: false, message: 'Remove subject failed' })
+  return res.json({ success: false, message: 'Remove subject failed' })
 
 });
 
@@ -161,10 +161,10 @@ router.post('/course/create', async function (req, res) {
 
   var course = await new Course({ subjectId, courseName }).save()
   if (course && course._id) {
-    return res.status(201).json({ success: true, message: "Course created" })
+    return res.json({ success: true, message: "Course created" })
   }
 
-  return res.status(400).json({ success: false, message: 'Create course failed' });
+  return res.json({ success: false, message: 'Create course failed' });
 });
 
 
@@ -176,14 +176,14 @@ router.post('/course/remove', authTeacher, async (req, res) => {
   var { courseId: _id } = req.body
   var course = await Course.findOne({ _id })
   if (!course) {
-    return res.status(401).json({ success: false, message: 'Not found.' })
+    return res.json({ success: false, message: 'Not found.' })
   } else {
     var { deletedCount } = await Course.deleteOne({ _id })
     if (deletedCount === 1) {
-      return res.status(200).json({ success: true, message: "removed." })
+      return res.json({ success: true, message: "removed." })
     }
 
-    return res.status(500).json({ success: false, message: 'Remove failed' })
+    return res.json({ success: false, message: 'Remove failed' })
   }
 });
 
@@ -196,10 +196,10 @@ router.post('/question/create', authTeacher, async function (req, res) {
   var question = await new Question({ type, article, options, answer, subjectId }).save()
 
   if (question && question._id) {
-    return res.status(201).json({ success: true, message: "Question created" })
+    return res.json({ success: true, message: "Question created" })
   }
 
-  return res.status(400).json({ success: false, message: 'Create question failed' });
+  return res.json({ success: false, message: 'Create question failed' });
 });
 
 /**
@@ -211,13 +211,13 @@ router.post('/question/update', authTeacher, async function (req, res) {
 
   var question = await Question.findOne({ _id: questionId })
   if (!question) {
-    return res.status(400).json({ success: false, message: "Question not found!" })
+    return res.json({ success: false, message: "Question not found!" })
   }
 
   Object.assign(question, { type, article, options, answer, subjectId })
 
   await question.save()
-  return res.status(200).json({ success: true, message: 'question updated' });
+  return res.json({ success: true, message: 'question updated' });
 });
 
 /**
@@ -228,14 +228,14 @@ router.post('/question/remove', authTeacher, async (req, res) => {
   var { questionId: _id } = req.body
   var question = await Question.findOne({ _id })
   if (!question) {
-    return res.status(401).json({ success: false, message: 'Not found.' })
+    return res.json({ success: false, message: 'Not found.' })
   } else {
     var { deletedCount } = await Question.deleteOne({ _id })
     if (deletedCount === 1) {
-      return res.status(200).json({ success: true, message: "Question removed." })
+      return res.json({ success: true, message: "Question removed." })
     }
 
-    return res.status(500).json({ success: false, message: 'Remove question failed' })
+    return res.json({ success: false, message: 'Remove question failed' })
   }
 });
 

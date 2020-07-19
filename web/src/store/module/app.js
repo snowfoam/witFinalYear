@@ -14,12 +14,17 @@ import {
   updateQuestion,
   removeQuestion,
   getExams,
+  getExamById,
   applyExam,
+  startExam,
+  examSubmit,
   cancleExam,
 } from '@/api/app'
 
 export default {
-  state: {},
+  state: {
+    exam: {},
+  },
   getters: {},
   mutations: {},
   actions: {
@@ -146,10 +151,40 @@ export default {
         return { success: false, message: err.message }
       }
     },
+    async getExamById({ state }, params) {
+      try {
+        const { data } = await getExamById(params)
+        if (data.data) {
+          state.exam = data.data
+          return { success: true, data: data.data }
+        } else {
+          return { success: false, message: err.message }
+        }
+      } catch (err) {
+        return { success: false, message: err.message }
+      }
+    },
     async applyExam({ }, params) {
       try {
         await applyExam(params)
         return { success: true, message: '' }
+      } catch (err) {
+        return { success: false, message: err.message }
+      }
+    },
+    async startExam({ state }, params) {
+      try {
+        const { data } = await startExam(params)
+        state.exam = data.data
+        return { success: true, data: data.data }
+      } catch (err) {
+        return { success: false, message: err.message }
+      }
+    },
+    async examSubmit({ }, params) {
+      try {
+        const { data } = await examSubmit(params)
+        return { success: true, data: data.data }
       } catch (err) {
         return { success: false, message: err.message }
       }

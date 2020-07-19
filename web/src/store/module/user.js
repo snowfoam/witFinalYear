@@ -8,6 +8,15 @@ export default {
     hasUserInfo: false,
     token: getToken(),
   },
+  getters: {
+    userName(state) {
+      const userInfo = state.userInfo;
+      if (userInfo && userInfo.name) {
+        return `${userInfo.name.firstName} ${userInfo.name.lastName}`;
+      }
+      return "";
+    }
+  },
   mutations: {
     setUserType(state, userType) {
       state.userType = userType

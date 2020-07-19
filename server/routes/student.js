@@ -5,13 +5,13 @@ var router = express.Router();
 var mongoose = require('mongoose')
 var { secretkey } = require('../shared/constant')
 var { authStudent } = require('../middleware/user')
-var { sampleSize } = require('lodash')
+var { sampleSize, intersection } = require('lodash')
 
 var Student = mongoose.model('Student')
 var Course = mongoose.model('Course')
 var Question = mongoose.model('Question')
 var Exam = mongoose.model('Exam')
-
+var ObjectId = id => mongoose.Types.ObjectId(id).toString()
 /**
  * /student/register
  * Register a new student
@@ -19,9 +19,9 @@ var Exam = mongoose.model('Exam')
 router.post('/register', async (req, res) => {
   var { email, password, firstName, lastName } = req.body
   if (!(email && password)) {
-    return res.status(400).json({ success: false, message: "No email or password!" })
+    return res.json({ success: false, message: "No email or password!" })
   } else if (await Student.findOne({ email })) {
-    return res.status(409).json({ success: false, message: "Student already exists!" })
+    return res.json({ success: false, message: "Student already exists!" })
   }
 
   var option = {
@@ -38,9 +38,9 @@ router.post('/register', async (req, res) => {
   var student = await new Student(option).save()
 
   if (student && student._id) {
-    return res.status(201).json({ success: true, message: "Student registered" })
+    return res.json({ success: true, message: "Student registered" })
   }
-  return res.status(400).json({ success: false, message: 'Register failed' });
+  return res.json({ success: false, message: 'Register failed' });
 });
 
 /**
@@ -61,7 +61,7 @@ router.post('/login', async (req, res) => {
     })
   }
 
-  return res.status(401).json({ success: false, message: 'Wrong email or password' })
+  return res.json({ success: false, message: 'Wrong email or password' })
 });
 
 /**
@@ -78,7 +78,7 @@ router.get('/getInfo', authStudent, async (req, res) => {
     })
   }
 
-  return res.status(401).json({ success: false, message: "get info error" })
+  return res.json({ success: false, message: "get info error" })
 });
 
 /**
@@ -89,9 +89,37 @@ router.get('/exam/query', authStudent, async (req, res) => {
   var { _id } = req.body
   var student = await Student.findOne({ _id })
   var data = await Promise.all(student.exams.map(item => new Promise((resolve, reject) => {
-    Exam.findOne({ _id: item }).then(exam => { resolve(exam) }).catch(e => reject(e.message))
+    Exam.findOne({ _id: item })
+      .then(exam => {
+        exam.questions = []
+        resolve(exam)
+      })
+      .catch(e =>
+        reject(e.message)
+      )
   })))
-  return res.status(200).json({ success: true, data, message: "" })
+  return res.json({ success: true, data, message: "" })
+});
+
+/**
+ * /student/exam/queryById
+ * student query exams
+ */
+router.get('/exam/queryById', authStudent, async (req, res) => {
+  var { examId } = req.query
+  var exam = await Exam.findOne({ _id: examId })
+
+  if (exam && exam._id) {
+    // set sended answer null
+    exam.questions.forEach(question => {
+      question.answer = null
+    })
+    var course = await Course.findOne({ _id: exam.courseId })
+    exam.courseName = course.courseName
+    return res.json({ success: true, data: exam, message: "" })
+  }
+
+  return res.json({ success: false, message: 'Not found' })
 });
 
 /**
@@ -121,10 +149,79 @@ router.post('/exam/apply', authStudent, async (req, res) => {
     student.exams.push(exam._id)
     await student.save()
 
-    return res.status(201).json({ success: true, message: "Exam applied" })
+    return res.json({ success: true, message: "Exam applied" })
   }
 
-  return res.status(401).json({ success: false, message: 'Apply exam failed' })
+  return res.json({ success: false, message: 'Apply exam failed' })
+});
+
+/**
+ * /student/exam/start
+ * student start an exam
+ */
+router.post('/exam/start', authStudent, async (req, res) => {
+  var { examId } = req.body
+  var exam = await Exam.findOne({ _id: examId })
+  if (exam && exam._id) {
+    exam.beginTime = new Date().getTime() + 30 * 1000
+    exam.endTime = new Date().getTime() + 30 * 1000 + 60 * 60 * 1000
+    exam.status = 'processing'
+    await exam.save()
+
+    // set sended answer null
+    exam.questions.forEach(question => {
+      question.answer = null
+    })
+    return res.json({ success: true, data: exam, message: "" })
+  }
+
+  return res.json({ success: false, message: 'start exam failed' })
+});
+
+/**
+ * /student/exam/submit
+ * student submit answers
+ */
+router.post('/exam/submit', authStudent, async (req, res) => {
+  var { examId, answers } = req.body
+  var exam = await Exam.findOne({ _id: examId })
+  if (exam && exam._id) {
+    var correct = 0
+    var errorList = []
+
+    console.log(exam.questions.map(o => o.answer))
+
+    exam.questions.forEach(item => {
+      var obj = answers.find(o => o._id === ObjectId(item._id))
+      if (item.type === 'multiple') {
+        var list = intersection(item.answer, obj.answer)
+        if (list.length === answers.length) {
+          correct++
+        } else {
+          errorList.push(obj._id)
+        }
+      } else {
+        if (obj.answer === item.answer) {
+          correct++
+        } else {
+          errorList.push(obj._id)
+        }
+      }
+    })
+
+    exam.score = Math.ceil(correct * 100 / exam.questions.length)
+    exam.status = 'ended'
+    await exam.save()
+
+    return res.json({
+      success: true, data: {
+        score: exam.score,
+        errorList
+      }, message: ""
+    })
+  }
+
+  return res.json({ success: false, message: 'submit exam failed' })
 });
 
 /**
@@ -137,10 +234,10 @@ router.post('/exam/cancle', authStudent, async (req, res) => {
   if (exam && exam._id) {
     exam.status = 'cancled'
     await exam.save()
-    return res.status(200).json({ success: true, message: "Exam cancled" })
+    return res.json({ success: true, message: "Exam cancled" })
   }
 
-  return res.status(500).json({ success: false, message: 'cancle exam failed' })
+  return res.json({ success: false, message: 'cancle exam failed' })
 });
 
 module.exports = router;

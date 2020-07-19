@@ -14,3 +14,5 @@ var QuestionSchema = new Schema({
 })
 
 mongoose.model('Question', QuestionSchema)
+
+module.exports = QuestionSchema

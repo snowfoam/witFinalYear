@@ -8,10 +8,11 @@
         <!-- content -->
         <Content class="main-content-con">
           <Layout class="main-layout-con">
-            <Content class="content-wrapper" :class="showHeaderBar?'container':''">
-              <keep-alive>
-                <router-view />
-              </keep-alive>
+            <Content
+              class="content-wrapper"
+              :class="showHeaderBar ? 'container' : ''"
+            >
+              <router-view />
             </Content>
           </Layout>
         </Content>
@@ -29,7 +30,7 @@ export default {
   },
   computed: {
     showHeaderBar() {
-      return this.$route.name !== 'login'
+      return this.$route.name !== "login";
     }
   }
 };

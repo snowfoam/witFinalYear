@@ -40,6 +40,11 @@ export default [
     component: () => import('@/view/Exams'),
   },
   {
+    path: '/exam/:examId',
+    name: 'exam',
+    component: () => import('@/view/Exam'),
+  },
+  {
     path: '/401',
     name: 'error_401',
     component: () => import('@/view/errorPage/401')

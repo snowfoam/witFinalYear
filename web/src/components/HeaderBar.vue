@@ -77,11 +77,7 @@ export default {
       return this.$store.state.user.userType;
     },
     userName() {
-      const userInfo = this.$store.state.user.userInfo;
-      if (userInfo && userInfo.name) {
-        return `${userInfo.name.firstName} ${userInfo.name.lastName}`;
-      }
-      return "";
+      return this.$store.getters.userName;
     }
   },
   methods: {

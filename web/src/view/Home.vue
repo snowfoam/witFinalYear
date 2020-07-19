@@ -19,11 +19,7 @@ export default {
   name: "home",
   computed: {
     userName() {
-      const userInfo = this.$store.state.user.userInfo;
-      if (userInfo && userInfo.name) {
-        return `${userInfo.name.firstName} ${userInfo.name.lastName}`;
-      }
-      return "";
+      return this.$store.getters.userName;
     }
   }
 };

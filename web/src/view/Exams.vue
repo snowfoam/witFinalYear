@@ -57,16 +57,33 @@
               :key="course._id"
               :value="course._id"
               :disabled="
-                exams.find(
-                  item =>
-                    item.courseId === course._id && item.status !== 'cancled'
-                )
+                !userCourses.includes(course._id) ||
+                  exams.find(
+                    item =>
+                      item.courseId === course._id && item.status !== 'cancled'
+                  )
               "
               >{{ course.courseName }}</Option
             >
           </Select>
         </FormItem>
       </Form>
+    </Modal>
+
+    <Modal v-model="showStartModal" width="360">
+      <p slot="header" style="color:#2d8cf0;text-align:center">
+        <Icon type="ios-information-circle"></Icon>
+        <span>exam - start</span>
+      </p>
+      <div style="text-align:center">
+        <p>
+          Will you start the exam of course:
+          {{ courseObject[formItem.courseId] }}?
+        </p>
+      </div>
+      <div slot="footer" style="text-align:center">
+        <Button type="primary" :loading="loading" @click="start">start</Button>
+      </div>
     </Modal>
 
     <Modal v-model="showCancleModal" width="360">
@@ -111,7 +128,7 @@ export default {
           align: "center"
         },
         {
-          title: "duration(Min)",
+          title: "duration(min)",
           key: "duration"
         },
         {
@@ -138,7 +155,7 @@ export default {
           key: "score"
         },
         {
-          title: "Action",
+          title: "action",
           slot: "action",
           width: 150,
           align: "center"
@@ -146,11 +163,19 @@ export default {
       ],
       formItem: {
         courseId: ""
-      }
+      },
+      userCourses: []
     };
   },
   methods: {
-    ...mapActions(["getExams", "getCourses", "applyExam", "cancleExam"]),
+    ...mapActions([
+      "getExams",
+      "getCourses",
+      "getUserCourses",
+      "applyExam",
+      "startExam",
+      "cancleExam"
+    ]),
 
     dateFormat(date) {
       return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
@@ -159,6 +184,11 @@ export default {
     async query() {
       const { list } = await this.getExams();
       this.exams = list;
+    },
+
+    async queryUserCourses() {
+      const { list } = await this.getUserCourses();
+      this.userCourses = list;
     },
 
     async queryCourses() {
@@ -198,6 +228,29 @@ export default {
       this.loading = false;
     },
 
+    async start() {
+      const { _id: examId, courseId } = this.formItem;
+      const courseName = this.courseObject[courseId]
+      this.loading = true;
+      const { success } = await this.startExam({ examId, courseName });
+
+      if (success) {
+        const exam = this.exams.find(item => item._id === examId);
+        exam.status = "processing";
+        this.$Message.success({
+          content: "start success, the page would redirect",
+          onClose: () => {
+            this.$router.push(`/exam/${examId}`);
+          }
+        });
+      } else {
+        this.$Message.error("start fail");
+      }
+
+      this.loading = false;
+      this.showStartModal = false;
+    },
+
     async cancle() {
       this.loading = true;
       const { _id: examId } = this.formItem;
@@ -215,6 +268,7 @@ export default {
   },
 
   async mounted() {
+    await this.queryUserCourses();
     await this.queryCourses();
     await this.query();
   }

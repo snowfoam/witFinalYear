@@ -4,14 +4,14 @@ var { secretkey } = require('../shared/constant')
 function auth(req, res, next, userType) {
     const token = req.cookies.token
     if (!token) {
-        return res.status(403).json({ success: false, message: 'not authorized.' })
+        return res.json({ success: false, message: 'not authorized.' })
     }
 
     jwt.verify(token, secretkey, (err, data) => {
         if (err) {
-            return res.status(403).json({ success: false, message: err.message })
+            return res.json({ success: false, message: err.message })
         } else if (!data || (userType && data.userType !== userType)) {
-            return res.status(400).json({ success: false, message: `not a valid ${userType}` })
+            return res.json({ success: false, message: `not a valid ${userType}` })
         }
 
         // set user's id

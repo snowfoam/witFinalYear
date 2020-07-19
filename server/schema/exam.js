@@ -1,6 +1,6 @@
 var mongoose = require('mongoose')
 var Schema = mongoose.Schema
-
+var Question = require('./question')
 var ExamSchema = new Schema({
     studentId: String,
     courseId: String,
@@ -13,10 +13,7 @@ var ExamSchema = new Schema({
         type: Number,
         default: 60 // minutes
     },
-    questions: [{
-        type: Schema.Types.ObjectId,
-        ref: 'Question'
-    }]
+    questions: { type: [Question] }
 })
 
 mongoose.model('Exam', ExamSchema)
