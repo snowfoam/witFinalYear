@@ -43,9 +43,16 @@ export const createCourse = (data) => {
     method: 'post'
   })
 }
+export const closeCourse = (data) => {
+  return axios.request({
+    url: '/teacher/course/close',
+    data,
+    method: 'post'
+  })
+}
 export const addCourse = (data) => {
   return axios.request({
-    url: '/course/add',
+    url: '/student/course/apply',
     data,
     method: 'post'
   })
@@ -60,7 +67,7 @@ export const removeCourse = (data) => {
 
 export const cancleCourse = (data) => {
   return axios.request({
-    url: '/teacher/course/cancle',
+    url: '/student/course/cancle',
     data,
     method: 'post'
   })
@@ -81,6 +88,14 @@ export const createQuestion = (data) => {
 export const updateQuestion = (data) => {
   return axios.request({
     url: '/teacher/question/update',
+    data,
+    method: 'post'
+  })
+}
+export const uploadExcel = (data) => {
+  return axios.request({
+    url: '/teacher/question/createByUpload',
+    headers: { "Content-Type": "multipart/form-data" },
     data,
     method: 'post'
   })

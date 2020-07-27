@@ -30,7 +30,7 @@
           <div v-if="question.type === 'multiple'">
             <CheckboxGroup v-model="question.answer">
               <Checkbox
-                :label="option"
+                :label="option + ''"
                 v-for="(option, i) in question.options"
                 :key="`${index}-${i}`"
               ></Checkbox>
@@ -39,7 +39,7 @@
           <div v-else>
             <RadioGroup v-model="question.answer">
               <Radio
-                :label="option"
+                :label="option + ''"
                 v-for="(option, i) in question.options"
                 :key="`${index}-${i}`"
               ></Radio>
@@ -59,135 +59,22 @@ export default {
   name: "exam",
   computed: {
     exam() {
-      // var a = {
-      //   success: true,
-      //   data: {
-      //     duration: 60,
-      //     _id: "5f098089ce60583ec862e028",
-      //     studentId: "5efca229d4a74338883070fa",
-      //     courseId: "5ee62a83f35c4631a42b103a",
-      //     createTime: "2020-07-11T09:04:09.153Z",
-      //     beginTime: "2020-07-11T11:19:27.054Z",
-      //     endTime: "2020-07-11T12:45:27.054Z",
-      //     score: null,
-      //     status: "processing",
-      //     questions: [
-      //       {
-      //         _id: "5eeec66904e2d90d20327508",
-      //         type: "single",
-      //         article: "single select test",
-      //         options: [1, 2, 3],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 1
-      //       },
-      //       {
-      //         _id: "5f01ade079e46a3de4f26b9b",
-      //         type: "single",
-      //         article: "en",
-      //         options: [3, 5, 6, 7],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 0
-      //       },
-      //       {
-      //         _id: "5f01adc679e46a3de4f26b98",
-      //         type: "single",
-      //         article: "en",
-      //         options: [1, 2, 3],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 0
-      //       },
-      //       {
-      //         _id: "5eeee63332cbf50c30990810",
-      //         type: "single",
-      //         article: "single select test",
-      //         options: [1, 2, 3],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 0
-      //       },
-      //       {
-      //         _id: "5f01addd79e46a3de4f26b9a",
-      //         type: "single",
-      //         article: "en",
-      //         options: [3, 5, 6, 7],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 0
-      //       },
-      //       {
-      //         _id: "5f01adda79e46a3de4f26b99",
-      //         type: "single",
-      //         article: "en",
-      //         options: [3, 5, 6, 7],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 0
-      //       },
-      //       {
-      //         _id: "5f01ae0479e46a3de4f26b9d",
-      //         type: "single",
-      //         article: "en",
-      //         options: [8, 9, 10, 11, 12],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 0
-      //       },
-      //       {
-      //         _id: "5f01adbd79e46a3de4f26b97",
-      //         type: "single",
-      //         article: "en",
-      //         options: [1, 2, 3],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 0
-      //       },
-      //       {
-      //         _id: "5f01ae0b79e46a3de4f26b9f",
-      //         type: "single",
-      //         article: "en",
-      //         options: [8, 9, 10, 11, 12],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 0
-      //       },
-      //       {
-      //         _id: "5f01ae0079e46a3de4f26b9c",
-      //         type: "single",
-      //         article: "en",
-      //         options: [8, 9, 10, 11, 12],
-      //         answer: null,
-      //         subjectId: "5ee621fcf48e72246cc73228",
-      //         __v: 0
-      //       }
-      //     ],
-      //     __v: 0
-      //   },
-      //   message: ""
-      // };
-      // return a.data;
       return this.$store.state.app.exam || {};
     },
     processing() {
       return this.exam.status === "processing";
     },
-    notStart() {
-      return this.processing && dayjs().isBefore(dayjs(this.exam.beginTime));
-    },
-    notEnd() {
-      return this.processing && dayjs().isBefore(dayjs(this.exam.endTime));
-    },
     userName() {
       return this.$store.getters.userName;
-    }
+    },
   },
   data() {
     return {
+      notStart: false,
+      notEnd: false,
       timer: null,
       startTiming: 0,
-      endTiming: 0
+      endTiming: 0,
     };
   },
   methods: {
@@ -207,29 +94,47 @@ export default {
     },
     async submit() {
       const examId = this.exam._id;
-      const answers = this.exam.questions.map(item => {
+      const answers = this.exam.questions.map((item) => {
         return { _id: item._id, answer: item.answer };
       });
       const {
         data: { score, errorList },
-        success
+        success,
       } = await this.examSubmit({ examId, answers });
       if (success) {
         this.$Message.success({
           content: `success to submit, your score is: ${score}`,
           onClose() {
             window.location.reload();
-          }
+          },
         });
       } else {
         this.$Message.error(`submit fail`);
       }
-    }
+    },
+    countDown() {
+      this.endTiming = dayjs(this.exam.endTime).diff(dayjs(), "second");
+      this.timer = setInterval(() => {
+        this.endTiming--;
+        if (this.endTiming <= 0) {
+          clearInterval(this.timer);
+          this.timer = null;
+          this.notEnd = false;
+          this.submit();
+        }
+      }, 1000);
+    },
   },
   async mounted() {
     if (!this.exam.courseName) {
       const examId = this.$route.params.examId;
       await this.getExamById({ examId });
+
+      this.notStart =
+        this.processing && dayjs().isBefore(dayjs(this.exam.beginTime));
+      this.notEnd =
+        this.processing && dayjs().isBefore(dayjs(this.exam.endTime));
+
       if (this.notStart) {
         this.startTiming = dayjs(this.exam.beginTime).diff(dayjs(), "second");
         this.timer = setInterval(() => {
@@ -237,21 +142,18 @@ export default {
           if (this.startTiming <= 0) {
             clearInterval(this.timer);
             this.timer = null;
-          }
-        }, 1000);
-      } else if (this.notEnd) {
-        this.endTiming = dayjs(this.exam.endTime).diff(dayjs(), "second");
-        this.timer = setInterval(() => {
-          this.endTiming--;
-          if (this.endTiming <= 0) {
-            clearInterval(this.timer);
-            this.timer = null;
-            this.submit();
+            this.notStart = false;
+            this.notEnd = true;
+            this.countDown();
           }
         }, 1000);
       }
+
+      if (this.notEnd) {
+        this.countDown();
+      }
     }
-  }
+  },
 };
 </script>
 

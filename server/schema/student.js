@@ -18,15 +18,14 @@ var StudentSchema = new Schema({
         type: ObjectId,
         ref: 'Exam'
     }],
+    examCourses: [{
+        type: ObjectId,
+        ref: 'Course'
+    }],
     courses: [{
         type: ObjectId,
         ref: 'Course'
     }]
-})
-
-StudentSchema.pre('save', function (next) {
-    this.password = cryptoJs.SHA1(this.password).toString()
-    next()
 })
 
 //  static methods

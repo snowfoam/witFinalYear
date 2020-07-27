@@ -2,25 +2,17 @@ var express = require('express');
 var cryptoJs = require('crypto-js')
 var jwt = require('jsonwebtoken')
 var router = express.Router();
+var xlsx = require('node-xlsx').default;
+var upload = require('multer')()
 var mongoose = require('mongoose')
 var { secretkey } = require('../shared/constant')
 var { authTeacher } = require('../middleware/user')
-var { randomString } = require('../shared/util')
 
 var Course = mongoose.model('Course')
 var Teacher = mongoose.model('Teacher')
 var Subject = mongoose.model('Subject')
 var Question = mongoose.model('Question')
-
-async function checkCourseName(subjectCode) {
-  var courseName = subjectCode + '-' + randomString()
-
-  if (await Course.findOne({ courseName })) {
-    checkCourseName(subjectCode)
-  }
-
-  return courseName
-}
+var Exam = mongoose.model('Exam')
 
 /**
  * /teacher/register
@@ -36,7 +28,7 @@ router.post('/register', async (req, res) => {
 
   var option = {
     email,
-    password,
+    password: cryptoJs.SHA1(password).toString(),
     name: {
       firstName,
       lastName,
@@ -62,6 +54,8 @@ router.post('/login', async (req, res) => {
 
   if (teacher && teacher._id) {
     return res.json({
+      success: true,
+      message: '',
       token: jwt.sign({ id: teacher._id, userType: 'teacher' }, secretkey, {
         expiresIn: 86400
       }),
@@ -83,6 +77,8 @@ router.get('/getInfo', authTeacher, async (req, res) => {
   if (teacher && teacher._id) {
     var { _id, email, name, courses } = teacher
     return res.json({
+      success: true,
+      message: '',
       data: { _id, email, name, courses }
     })
   }
@@ -151,17 +147,56 @@ router.post('/subject/remove', authTeacher, async function (req, res) {
 });
 
 /**
+ * /teacher/course/close
+ * close course
+ */
+router.post('/course/close', authTeacher, async function (req, res) {
+  var { courseId } = req.body
+
+  var course = await Course.findOne({ _id: courseId })
+  course.status = 'closed'
+  await course.save()
+  var exams = await Exam.find({ courseId })
+  Promise.all(exams.map(item => {
+    item.status = 'course-closed'
+    return item.save()
+  }))
+
+  return res.json({ success: true, message: 'closed.' })
+
+})
+/**
  * /teacher/course/create
  * create course by subjectCode
  * subject : course => 1 : n
  */
-router.post('/course/create', async function (req, res) {
-  var { subjectCode, subjectId } = req.body
-  var courseName = await checkCourseName(subjectCode)
+router.post('/course/create', authTeacher, async function (req, res) {
+  var { courseName, _id, subjectId, description } = req.body
+  var subject = await Subject.findOne({ _id: subjectId })
+  if (await Course.findOne({ courseName })) {
+    return res.json({ success: false, message: 'course name already exsited.' })
+  }
 
-  var course = await new Course({ subjectId, courseName }).save()
+  var teacher = await Teacher.findOne({ _id })
+  var { name: { lastName, firstName } } = teacher
+  var course = await new Course({
+    subjectId,
+    subjectName: subject.subjectName,
+    courseName,
+    teacherId: teacher._id,
+    teacherName: `${firstName} ${lastName}`,
+    description,
+    status: 'open'
+  }).save()
+
   if (course && course._id) {
-    return res.json({ success: true, message: "Course created" })
+    try {
+      teacher.courses.push(course._id)
+      await teacher.save()
+      return res.json({ success: true, message: 'added.' })
+    } catch (error) {
+      return res.json({ success: false, message: 'Course created but assigning failed' });
+    }
   }
 
   return res.json({ success: false, message: 'Create course failed' });
@@ -200,6 +235,32 @@ router.post('/question/create', authTeacher, async function (req, res) {
   }
 
   return res.json({ success: false, message: 'Create question failed' });
+});
+
+/**
+ * /teacher/question/createByUpload
+ * Create questions by excel file
+ */
+router.post('/question/createByUpload', authTeacher, upload.single('excel'), async function (req, res) {
+  try {
+    var data = xlsx.parse(req.file.buffer) // list
+    var subjectId = req.body.subjectId
+    var first = data[0].data[0]
+    var len = data[0].data.length
+    var list = []
+
+    for (let index = 1; index < len; index++) {
+      var obj = { subjectId }
+      first.forEach((item, i) => {
+        obj[item] = data[0].data[index][i]
+      })
+      list.push(obj)
+    }
+    await Question.insertMany(list)
+    return res.json({ success: true, data: list, message: "Question created" })
+  } catch (error) {
+    return res.json({ success: false, message: 'Create question failed' });
+  }
 });
 
 /**

@@ -20,11 +20,6 @@ var TeacherSchema = new Schema({
     }]
 })
 
-TeacherSchema.pre('save', function (next) {
-    this.password = cryptoJs.SHA1(this.password).toString()
-    next()
-})
-
 //  static methods
 TeacherSchema.methods = {
     validatePassword,

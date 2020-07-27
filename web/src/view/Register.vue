@@ -127,7 +127,7 @@ export default {
             this.$Message.success({
               content: "register success",
               onClose: () => {
-                this.$router.push({ name: "home" });
+                this.$router.push({ name: "login" });
               }
             });
           } else {

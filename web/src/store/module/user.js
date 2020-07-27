@@ -41,8 +41,7 @@ export default {
         const { data } = await login(params)
         commit('setToken', data)
         commit('setUserType', params.userType)
-
-        return { success: true }
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
@@ -52,7 +51,7 @@ export default {
     async handleRegister({ }, params) {
       try {
         const { data } = await register(params)
-        return { success: true }
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
@@ -63,7 +62,7 @@ export default {
       try {
         const { data } = await getUserInfo()
         commit('setUserInfo', data)
-        return { success: true }
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }

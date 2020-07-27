@@ -26,7 +26,7 @@ router.post('/register', async (req, res) => {
 
   var option = {
     email,
-    password,
+    password: cryptoJs.SHA1(password).toString(),
     name: {
       firstName,
       lastName,
@@ -53,6 +53,8 @@ router.post('/login', async (req, res) => {
 
   if (student && student._id) {
     return res.json({
+      success: true,
+      message: '',
       token: jwt.sign({ id: student._id, userType: 'student' }, secretkey, {
         expiresIn: 86400
       }),
@@ -72,13 +74,68 @@ router.get('/getInfo', authStudent, async (req, res) => {
   var student = await Student.findOne({ _id })
 
   if (student && student._id) {
-    var { _id, email, name, courses, exams } = student
+    var { _id, email, name, courses, exams, examCourses } = student
     return res.json({
-      data: { _id, email, name, courses, exams }
+      success: true,
+      message: '',
+      data: { _id, email, name, courses, exams, examCourses }
     })
   }
 
   return res.json({ success: false, message: "get info error" })
+});
+
+/**
+ * /student/course/apply
+ * add course by student
+ */
+router.post('/course/apply', authStudent, async (req, res) => {
+  var { courseId, _id } = req.body
+
+  var User = Student
+  var user = await User.findOne({ _id })
+  if (user && user.courses.includes(courseId)) {
+    return res.json({ success: false, message: 'Already applied.' })
+  }
+
+  user.courses.push(courseId)
+  await user.save()
+
+  return res.json({ success: true, message: "Course applied." })
+});
+
+/**
+ * /course/cancle
+ * cancle course by user
+ */
+router.post('/course/cancle', authStudent, async (req, res) => {
+  var { courseId, _id, userType } = req.body
+
+  var User
+  if (userType === 'student') {
+    User = Student
+  } else if (userType === 'teacher') {
+    User = Teacher
+  } else {
+    return res.json({ success: false, message: 'User type error' });
+  }
+
+  var user = await User.findOne({ _id })
+  if (user && !user.courses.includes(courseId)) {
+    return res.json({ success: false, message: 'not found.' })
+  }
+
+  var index = user.courses.indexOf(courseId)
+  user.courses.splice(index, 1)
+  await user.save()
+
+  var exams = await Exam.find({ courseId })
+  Promise.all(exams.map(item => {
+    item.status = 'course-closed'
+    return item.save()
+  }))
+
+  return res.json({ success: true, message: "Course cancled." })
 });
 
 /**
@@ -88,7 +145,7 @@ router.get('/getInfo', authStudent, async (req, res) => {
 router.get('/exam/query', authStudent, async (req, res) => {
   var { _id } = req.body
   var student = await Student.findOne({ _id })
-  var data = await Promise.all(student.exams.map(item => new Promise((resolve, reject) => {
+  var data = await Promise.all((student.exams || []).map(item => new Promise((resolve, reject) => {
     Exam.findOne({ _id: item })
       .then(exam => {
         exam.questions = []
@@ -146,6 +203,7 @@ router.post('/exam/apply', authStudent, async (req, res) => {
 
   if (exam && exam._id) {
     var student = await Student.findOne({ _id })
+    student.examCourses.push(courseId)
     student.exams.push(exam._id)
     await student.save()
 
@@ -189,8 +247,6 @@ router.post('/exam/submit', authStudent, async (req, res) => {
     var correct = 0
     var errorList = []
 
-    console.log(exam.questions.map(o => o.answer))
-
     exam.questions.forEach(item => {
       var obj = answers.find(o => o._id === ObjectId(item._id))
       if (item.type === 'multiple') {
@@ -201,7 +257,7 @@ router.post('/exam/submit', authStudent, async (req, res) => {
           errorList.push(obj._id)
         }
       } else {
-        if (obj.answer === item.answer) {
+        if (obj.answer.toString() === item.answer.toString()) {
           correct++
         } else {
           errorList.push(obj._id)
@@ -214,10 +270,12 @@ router.post('/exam/submit', authStudent, async (req, res) => {
     await exam.save()
 
     return res.json({
-      success: true, data: {
+      success: true,
+      data: {
         score: exam.score,
         errorList
-      }, message: ""
+      },
+      message: ""
     })
   }
 

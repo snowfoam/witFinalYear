@@ -5,7 +5,7 @@
         <Select
           clearable
           v-model="formInline.subjectId"
-          style="width:200px"
+          style="width: 200px;"
           placeholder="subject type"
         >
           <Option
@@ -20,7 +20,7 @@
         <Select
           clearable
           v-model="formInline.type"
-          style="width:200px"
+          style="width: 200px;"
           placeholder="question type"
         >
           <Option value="single">single</Option>
@@ -30,8 +30,14 @@
       </FormItem>
       <FormItem>
         <Button @click="query" style="margin-right: 8px;">search</Button>
+        <Button
+          icon="ios-cloud-upload-outline"
+          @click="openUploadModal"
+          style="margin-right: 8px;"
+          >Create(Excel)</Button
+        >
         <Button type="primary" icon="ios-add" @click="openCreateModal"
-          >Create Question</Button
+          >Create</Button
         >
       </FormItem>
     </Form>
@@ -48,7 +54,7 @@
           type="primary"
           ghost
           size="small"
-          style="margin-right: 5px"
+          style="margin-right: 5px;"
           @click="openUpdateModal(row)"
           >edit</Button
         >
@@ -76,7 +82,7 @@
           <Select
             clearable
             v-model="formItem.subjectId"
-            style="width:200px"
+            style="width: 200px;"
             placeholder="subject type"
           >
             <Option
@@ -91,7 +97,7 @@
           <Select
             clearable
             v-model="formItem.type"
-            style="width:200px"
+            style="width: 200px;"
             placeholder="question type"
             @on-change="onChange"
           >
@@ -103,8 +109,8 @@
         <FormItem label="Options">
           <Tag
             v-for="item in formItem.options"
-            :key="item"
-            :name="item"
+            :key="`${item}`"
+            :name="`${item}`"
             :closable="formItem.type !== 'trueOrFalse'"
             @on-close="handleClose"
             >{{ item }}</Tag
@@ -132,7 +138,7 @@
             clearable
             :multiple="formItem.type === 'multiple'"
             v-model="formItem.answer"
-            style="width:200px"
+            style="width: 200px;"
             placeholder="anwser"
           >
             <Option
@@ -146,15 +152,57 @@
       </Form>
     </Modal>
 
+    <Modal v-model="showUploadModal" width="460">
+      <p slot="header" style="text-align: center;">
+        <Icon type="ios-information-circle"></Icon>
+        <span>question - upload excel</span>
+      </p>
+      <Form :model="formItem" :label-width="140">
+        <FormItem label="Subject Type">
+          <Select
+            clearable
+            v-model="formItem.subjectId"
+            style="width: 200px;"
+            placeholder="subject type"
+          >
+            <Option
+              v-for="subject in subjects"
+              :key="subject._id"
+              :value="subject._id"
+              >{{ subject.subjectName }}</Option
+            >
+          </Select>
+        </FormItem>
+        <FormItem label="Question Type">
+          <Upload
+            :before-upload="handleUpload"
+            action="/teacher/question/createByUpload"
+          >
+            <Button icon="ios-cloud-upload-outline"
+              >Select the file to upload</Button
+            >
+          </Upload>
+          <div v-if="file !== null">
+            Upload file: {{ file.name }}
+            <Button type="text" @click="upload" :loading="loading">{{
+              loading ? "Uploading" : "Click to upload"
+            }}</Button>
+          </div>
+        </FormItem>
+      </Form>
+
+      <div slot="footer"></div>
+    </Modal>
+
     <Modal v-model="showDeleteModal" width="360">
-      <p slot="header" style="color:#f60;text-align:center">
+      <p slot="header" style="color: #f60; text-align: center;">
         <Icon type="ios-information-circle"></Icon>
         <span>question - delete</span>
       </p>
-      <div style="text-align:center">
+      <div style="text-align: center;">
         <p>Will you delete question: {{ questionNo }}?</p>
       </div>
-      <div slot="footer" style="text-align:center">
+      <div slot="footer" style="text-align: center;">
         <Button type="error" :loading="loading" @click="remove">delete</Button>
       </div>
     </Modal>
@@ -170,7 +218,7 @@ export default {
     return {
       formInline: {
         subjectId: "",
-        type: ""
+        type: "",
       },
       subjects: [],
       questionNo: "",
@@ -181,40 +229,42 @@ export default {
       modalType: "create", // create | update
       showCreateOrUpdateModal: false,
       showDeleteModal: false,
+      showUploadModal: false,
+      file: null,
       loading: false,
       formItem: {
         type: "",
         article: "",
         options: [],
         answer: [],
-        subjectId: ""
+        subjectId: "",
       },
       columns: [
         {
           title: "No",
           slot: "no",
-          width: 70
+          width: 70,
         },
         {
           title: "Desc",
-          key: "article"
+          key: "article",
         },
         {
           title: "QuestionType",
-          key: "type"
+          key: "type",
         },
         {
           title: "SubjectType",
           slot: "subject",
-          align: "center"
+          align: "center",
         },
         {
           title: "Action",
           slot: "action",
           width: 150,
-          align: "center"
-        }
-      ]
+          align: "center",
+        },
+      ],
     };
   },
   methods: {
@@ -223,7 +273,8 @@ export default {
       "getQuestions",
       "createQuestion",
       "updateQuestion",
-      "removeQuestion"
+      "uploadExcel",
+      "removeQuestion",
     ]),
     openCreateModal() {
       this.modalType = "create";
@@ -233,14 +284,36 @@ export default {
         article: "",
         options: [],
         answer: [],
-        subjectId: ""
+        subjectId: "",
       };
     },
 
     openUpdateModal(row) {
       this.modalType = "update";
       this.showCreateOrUpdateModal = true;
-      this.formItem = cloneDeep(row);
+      const cRow = cloneDeep(row);
+      if (Array.isArray(cRow.options)) {
+        cRow.options = cRow.options.map((item) => {
+          if (typeof item === "boolean") {
+            return String(item);
+          }
+        });
+      }
+      if (typeof cRow.answer === "boolean") {
+        cRow.answer = String(cRow.answer);
+      }
+      this.formItem = cRow;
+    },
+
+    openUploadModal() {
+      this.showUploadModal = true;
+      this.formItem = {
+        type: "",
+        article: "",
+        options: [],
+        answer: [],
+        subjectId: "",
+      };
     },
 
     openDeleteModal(row, questionNo) {
@@ -259,7 +332,7 @@ export default {
 
     showInput() {
       this.inputVisible = true;
-      this.$nextTick(_ => {
+      this.$nextTick((_) => {
         this.$refs.saveTagInput.$refs.input.focus();
       });
     },
@@ -281,7 +354,7 @@ export default {
     async querySubjects() {
       const { list } = await this.getSubjects();
       this.subjects = list;
-      list.forEach(item => {
+      list.forEach((item) => {
         this.subjectObject[item._id] = item.subjectName;
       });
     },
@@ -310,10 +383,39 @@ export default {
       this.loading = false;
     },
 
+    handleUpload(file) {
+      this.file = file;
+      return false;
+    },
+
+    async upload() {
+      if (!this.formItem.subjectId || !this.file) {
+        this.$Message.error("please select subject type");
+        return;
+      }
+
+      this.loading = true;
+      let formData = new FormData();
+
+      formData.append("excel", this.file);
+      formData.append("subjectId", this.formItem.subjectId);
+
+      const { success } = await this.uploadExcel(formData);
+      if (success) {
+        await this.query();
+        this.$Message.success("upload success");
+      } else {
+        this.$Message.error("upload fail");
+      }
+      this.loading = false;
+      this.showUploadModal = false;
+      this.file = null;
+    },
+
     async remove() {
       this.loading = true;
       const { success } = await this.removeQuestion({
-        questionId: this.formItem._id
+        questionId: this.formItem._id,
       });
       if (success) {
         await this.query();
@@ -323,13 +425,13 @@ export default {
       }
       this.loading = false;
       this.showDeleteModal = false;
-    }
+    },
   },
 
   async mounted() {
     await this.querySubjects();
     await this.query();
-  }
+  },
 };
 </script>
 <style lang="less" scoped>

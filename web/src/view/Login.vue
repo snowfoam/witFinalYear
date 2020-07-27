@@ -65,14 +65,14 @@ export default {
                 callback();
               }
             },
-            trigger: "blur"
-          }
+            trigger: "blur",
+          },
         ],
         password: [
-          { required: true, message: "password is required", trigger: "blur" }
-        ]
+          { required: true, message: "password is required", trigger: "blur" },
+        ],
       };
-    }
+    },
   },
 
   data() {
@@ -80,14 +80,14 @@ export default {
       form: {
         userType: "student",
         email: "",
-        password: ""
-      }
+        password: "",
+      },
     };
   },
   methods: {
     ...mapActions(["handleLogin"]),
     login() {
-      this.$refs.loginForm.validate(async valid => {
+      this.$refs.loginForm.validate(async (valid) => {
         if (valid) {
           const { success, message } = await this.handleLogin(this.form);
           if (success) {
@@ -98,8 +98,8 @@ export default {
           }
         }
       });
-    }
-  }
+    },
+  },
 };
 </script>
 <style lang="less" scoped>

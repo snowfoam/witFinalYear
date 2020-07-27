@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="add-btn">
+    <div class="add-btn" v-if="!isTeacher">
       <Button type="primary" icon="ios-add" @click="openApplyModal"
         >apply exam</Button
       >
@@ -27,16 +27,25 @@
           type="primary"
           ghost
           size="small"
-          style="margin-right: 5px"
-          :disabled="row.status !== 'nostart'"
+          style="margin-right: 5px;"
+          v-if="row.status === 'nostart'"
           @click="openStartModal(row)"
           >start</Button
+        >
+        <Button
+          type="primary"
+          ghost
+          size="small"
+          style="margin-right: 5px;"
+          v-if="row.status === 'processing'"
+          @click="$router.push(`/exam/${row._id}`)"
+          >processing</Button
         >
         <Button
           type="error"
           size="small"
           ghost
-          :disabled="row.status !== 'nostart'"
+          v-if="row.status === 'nostart'"
           @click="openCancleModal(row)"
           >cancle</Button
         >
@@ -53,15 +62,15 @@
         <FormItem label="Select subject">
           <Select v-model="formItem.courseId">
             <Option
-              v-for="course in courses"
+              v-for="course in courses.filter((item) => item.status === 'open')"
               :key="course._id"
               :value="course._id"
               :disabled="
-                !userCourses.includes(course._id) ||
-                  exams.find(
-                    item =>
-                      item.courseId === course._id && item.status !== 'cancled'
-                  )
+                !!exams.find(
+                  (item) =>
+                    item.courseId === course._id &&
+                    !['cancled', 'course-closed'].includes(item.status)
+                )
               "
               >{{ course.courseName }}</Option
             >
@@ -71,30 +80,30 @@
     </Modal>
 
     <Modal v-model="showStartModal" width="360">
-      <p slot="header" style="color:#2d8cf0;text-align:center">
+      <p slot="header" style="color: #2d8cf0; text-align: center;">
         <Icon type="ios-information-circle"></Icon>
         <span>exam - start</span>
       </p>
-      <div style="text-align:center">
+      <div style="text-align: center;">
         <p>
           Will you start the exam of course:
           {{ courseObject[formItem.courseId] }}?
         </p>
       </div>
-      <div slot="footer" style="text-align:center">
+      <div slot="footer" style="text-align: center;">
         <Button type="primary" :loading="loading" @click="start">start</Button>
       </div>
     </Modal>
 
     <Modal v-model="showCancleModal" width="360">
-      <p slot="header" style="color:#f60;text-align:center">
+      <p slot="header" style="color: #f60; text-align: center;">
         <Icon type="ios-information-circle"></Icon>
         <span>exam - cancle</span>
       </p>
-      <div style="text-align:center">
+      <div style="text-align: center;">
         <p>Will you cancle exam: {{ courseObject[formItem.courseId] }}?</p>
       </div>
-      <div slot="footer" style="text-align:center">
+      <div slot="footer" style="text-align: center;">
         <Button type="error" :loading="loading" @click="cancle">cancle</Button>
       </div>
     </Modal>
@@ -120,52 +129,60 @@ export default {
         {
           title: "No",
           slot: "no",
-          width: 70
+          width: 70,
         },
         {
           title: "course name",
           slot: "course",
-          align: "center"
+          align: "center",
         },
         {
           title: "duration(min)",
-          key: "duration"
+          key: "duration",
         },
         {
           title: "status",
-          key: "status"
+          key: "status",
         },
         {
           title: "apply time",
           key: "createTime",
-          slot: "createTime"
+          slot: "createTime",
         },
         {
           title: "begin time",
           key: "beginTime",
-          slot: "beginTime"
+          slot: "beginTime",
         },
         {
           title: "end time",
           key: "endTime",
-          slot: "endTime"
+          slot: "endTime",
         },
         {
           title: "score",
-          key: "score"
+          key: "score",
         },
         {
           title: "action",
           slot: "action",
           width: 150,
-          align: "center"
-        }
+          align: "center",
+        },
       ],
       formItem: {
-        courseId: ""
+        courseId: "",
       },
-      userCourses: []
+      userCourses: [],
     };
+  },
+  computed: {
+    userType() {
+      return this.$store.state.user.userType;
+    },
+    isTeacher() {
+      return this.userType === "teacher";
+    },
   },
   methods: {
     ...mapActions([
@@ -174,7 +191,7 @@ export default {
       "getUserCourses",
       "applyExam",
       "startExam",
-      "cancleExam"
+      "cancleExam",
     ]),
 
     dateFormat(date) {
@@ -183,7 +200,7 @@ export default {
 
     async query() {
       const { list } = await this.getExams();
-      this.exams = list;
+      this.exams = list || [];
     },
 
     async queryUserCourses() {
@@ -194,7 +211,7 @@ export default {
     async queryCourses() {
       const { list } = await this.getCourses();
       this.courses = list;
-      list.forEach(item => {
+      list.forEach((item) => {
         this.courseObject[item._id] = item.courseName;
       });
     },
@@ -220,6 +237,7 @@ export default {
       const { success } = await this.applyExam({ courseId });
 
       if (success) {
+        await this.$store.dispatch('getUserInfo')
         await this.query();
         this.$Message.success("apply success");
       } else {
@@ -230,18 +248,18 @@ export default {
 
     async start() {
       const { _id: examId, courseId } = this.formItem;
-      const courseName = this.courseObject[courseId]
+      const courseName = this.courseObject[courseId];
       this.loading = true;
       const { success } = await this.startExam({ examId, courseName });
 
       if (success) {
-        const exam = this.exams.find(item => item._id === examId);
+        const exam = this.exams.find((item) => item._id === examId);
         exam.status = "processing";
         this.$Message.success({
           content: "start success, the page would redirect",
           onClose: () => {
             this.$router.push(`/exam/${examId}`);
-          }
+          },
         });
       } else {
         this.$Message.error("start fail");
@@ -264,14 +282,14 @@ export default {
       }
       this.loading = false;
       this.showCancleModal = false;
-    }
+    },
   },
 
   async mounted() {
     await this.queryUserCourses();
     await this.queryCourses();
     await this.query();
-  }
+  },
 };
 </script>
 

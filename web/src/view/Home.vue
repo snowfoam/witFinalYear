@@ -4,11 +4,37 @@
     <div class="shortcuts">
       <header>Shortcuts:</header>
       <div class="links">
-        <div><a href="/subjects">subject: query/add/update/remove </a></div>
-        <div><a href="/courses">course: query/add/update/remove </a></div>
-        <div><a href="/questions">question: query/add/update/remove </a></div>
-        <div><a href="/exams">exam: query </a></div>
-        <div><a href="/students">student: query </a></div>
+        <div>
+          <a href="/subjects" v-if="isTeacher"
+            >subject: query/add/update/remove
+          </a>
+        </div>
+        <div>
+          <a href="/courses">
+            <template v-if="isTeacher">
+              course: query/add/applay/remove
+            </template>
+            <template v-else>
+              course: query/applay
+            </template>
+          </a>
+        </div>
+        <div>
+          <a href="/questions" v-if="isTeacher"
+            >question: query/add/update/remove
+          </a>
+        </div>
+        <div>
+          <a href="/exams">
+            <template v-if="isTeacher">
+              exam: query
+            </template>
+            <template v-else>
+              exam: query/apply/start/cancle
+            </template>
+          </a>
+        </div>
+        <div><a href="/students" v-if="isTeacher">student: query </a></div>
       </div>
     </div>
   </div>
@@ -18,10 +44,16 @@
 export default {
   name: "home",
   computed: {
+    userType() {
+      return this.$store.state.user.userType;
+    },
+    isTeacher() {
+      return this.userType === "teacher";
+    },
     userName() {
       return this.$store.getters.userName;
-    }
-  }
+    },
+  },
 };
 </script>
 

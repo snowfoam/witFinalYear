@@ -19,7 +19,7 @@
           <Icon type="ios-paper" />
           Home
         </MenuItem>
-        <Submenu name="course">
+        <Submenu name="course" v-if="isTeacher">
           <template slot="title">
             <Icon type="ios-construct" />
             Course
@@ -27,7 +27,11 @@
           <MenuItem name="subjects" to="/subjects">Subjects</MenuItem>
           <MenuItem name="courses" to="/courses">Courses</MenuItem>
         </Submenu>
-        <Submenu name="exam">
+        <MenuItem name="courses" to="/courses" v-else>
+          <Icon type="ios-construct" />
+          Course
+        </MenuItem>
+        <Submenu name="exam" v-if="isTeacher">
           <template slot="title">
             <Icon type="ios-stats" />
             Exam
@@ -35,7 +39,11 @@
           <MenuItem name="questions" to="/questions">Questions</MenuItem>
           <MenuItem name="exams" to="/exams">Exams</MenuItem>
         </Submenu>
-        <MenuItem name="students" to="/students">
+        <MenuItem name="exams" to="/exams" v-else>
+          <Icon type="ios-stats" />
+          Exam
+        </MenuItem>
+        <MenuItem name="students" to="/students" v-if="isTeacher">
           <Icon type="ios-people" />
           Student
         </MenuItem>
@@ -76,9 +84,12 @@ export default {
     userType() {
       return this.$store.state.user.userType;
     },
+    isTeacher() {
+      return this.userType === "teacher";
+    },
     userName() {
       return this.$store.getters.userName;
-    }
+    },
   },
   methods: {
     ...mapActions(["handleLogOut"]),
@@ -91,8 +102,8 @@ export default {
     goRegister() {
       if (this.$route.name === "register") return;
       this.$router.push("/register");
-    }
-  }
+    },
+  },
 };
 </script>
 
