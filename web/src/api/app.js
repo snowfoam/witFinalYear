@@ -112,6 +112,17 @@ export const getExams = (data) => {
     url: '/student/exam/query'
   })
 }
+export const getTeacherExams = (data) => {
+  return axios.request({
+    url: '/teacher/exams'
+  })
+}
+export const getExamDetailById = (params) => {
+  return axios.request({
+    url: '/teacher/getExamDetailById',
+    params,
+  })
+}
 export const getExamById = (params) => {
   return axios.request({
     url: '/student/exam/queryById',
@@ -144,5 +155,11 @@ export const cancleExam = (data) => {
     url: '/student/exam/cancle',
     data,
     method: 'post'
+  })
+}
+export const getStudents = (params) => {
+  return axios.request({
+    url: '/teacher/students',
+    params,
   })
 }

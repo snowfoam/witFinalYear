@@ -8,7 +8,7 @@ import { setToken, getToken } from '@/libs/util'
 Vue.use(Router)
 const router = new Router({
   routes,
-  mode: 'history'
+  mode: 'hash'
 })
 
 router.beforeEach(async (to, from, next) => {

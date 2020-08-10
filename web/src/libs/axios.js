@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { Message } from 'view-design'
 
 class HttpRequest {
   constructor() {
@@ -29,6 +30,9 @@ class HttpRequest {
     instance.interceptors.response.use(res => {
       this.destroy(url)
       const { data, status } = res
+      if (!res.data.success) {
+        Message.error(res.data.message)
+      }
       return { data, status }
     }, error => {
       this.destroy(url)

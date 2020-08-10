@@ -7,8 +7,10 @@ var upload = require('multer')()
 var mongoose = require('mongoose')
 var { secretkey } = require('../shared/constant')
 var { authTeacher } = require('../middleware/user')
+var { intersection } = require('lodash')
 
 var Course = mongoose.model('Course')
+var Student = mongoose.model('Student')
 var Teacher = mongoose.model('Teacher')
 var Subject = mongoose.model('Subject')
 var Question = mongoose.model('Question')
@@ -297,6 +299,116 @@ router.post('/question/remove', authTeacher, async (req, res) => {
     }
 
     return res.json({ success: false, message: 'Remove question failed' })
+  }
+});
+
+/**
+ * /teacher/exams
+ * teacher's exams
+ */
+router.get('/exams', authTeacher, async (req, res) => {
+  var { _id } = req.body
+  var teacher = await Teacher.findOne({ _id })
+  try {
+    var exams = await Promise.all(teacher.courses.map(courseId =>
+      new Promise((resolve, reject) => {
+        Exam.find({ courseId })
+          .then(data => resolve({ courseId, data }))
+          .catch(err => reject(err))
+      })))
+    return res.json({ success: true, data: exams, message: '' })
+  } catch (error) {
+    return res.json({ success: false, data: null, message: error.message })
+  }
+});
+/**
+ * /teacher/students
+ * query students who apply the teacher's courses
+ */
+router.get('/students', authTeacher, async (req, res) => {
+  var { _id } = req.body
+  var teacher = await Teacher.findOne({ _id })
+  try {
+    var { courses } = teacher
+
+    var students = await Student.find()
+    students = students.filter(item => {
+      var l1 = item.courses.map(o => String(o))
+      var l2 = courses.map(o => String(o))
+      var l3 = intersection(l1, l2)
+      return l3.length
+    })
+
+    var studentObject = {}
+    students.forEach(item => {
+      studentObject[item._id] = `${item.name.firstName} ${item.name.lastName}`
+    })
+
+
+    var examIds = []
+    students.forEach(student => {
+      examIds = examIds.concat(student.exams)
+    })
+
+    var result = await Promise.all(examIds.map(examId => {
+      return new Promise((resolve) => {
+        Exam.findOne({ _id: examId })
+          .then(data => resolve(data))
+      })
+    }))
+
+    var list =
+      result.filter(item => courses.includes(item.courseId))
+        .map(item => {
+          item.studentName = studentObject[item.studentId]
+          return item
+        })
+
+    return res.json({ success: true, data: { list, studentObject }, message: '' })
+  } catch (error) {
+    return res.json({ success: false, data: null, message: error.message })
+  }
+});
+
+/**
+ * /teacher/getExamDetailById
+ * teacher's exams
+ */
+router.get('/getExamDetailById', authTeacher, async (req, res) => {
+  var { examId } = req.query
+  try {
+    var exam = await Exam.findOne({ _id: examId })
+    var { studentId, courseId } = exam
+    var student = await Student.findOne({ _id: studentId })
+    var course = await Course.findOne({ _id: courseId })
+    var { name, email } = student
+    var { studentId, courseId, createTime, beginTime, endTime, status, score, duration, questions } = exam
+    var { teacherId, teacherName, subjectName, description, courseName, subjectId } = course
+
+    var data = {
+      studentName: `${name.firstName} ${name.lastName}`,
+      studentId,
+      studentEmail,
+      courseName,
+      courseId,
+      teacherName,
+      teacherId,
+      subjectName,
+      subjectId,
+      createTime,
+      beginTime,
+      endTime,
+      status,
+      score,
+      duration,
+      description,
+      questions,
+    }
+
+    return res.json({ success: true, data, message: '' })
+
+  } catch (error) {
+    return res.json({ success: false, data: null, message: error.message })
   }
 });
 

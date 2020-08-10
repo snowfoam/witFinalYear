@@ -1,15 +1,17 @@
 var createError = require('http-errors');
+var https = require('https');
 var express = require('express');
+var fs = require('fs');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var debug = require('debug')('myapp:server');
+var helmet = require('helmet');
 var connect = require('./database/connect')
 var { normalizePort } = require('./shared/util')
-
 var bootstrap = async () => {
   // connect mongodb database and init schemas
-  var db = await connect()
+  await connect()
 
   var indexRouter = require('./routes/index');
   var teacherRouter = require('./routes/teacher');
@@ -21,7 +23,8 @@ var bootstrap = async () => {
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'pug');
 
-  app.use(logger('dev'));
+  app.use(helmet());
+  app.use(logger('combined', { stream: fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' }) }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser());
@@ -47,15 +50,21 @@ var bootstrap = async () => {
     res.render('error');
   });
 
-  var http = require('http');
+  // var http = require('http');
+  var https = require('https');
 
   // Get port from environment and store in Express.
   var port = normalizePort(process.env.PORT || '3000');
   app.set('port', port);
 
   // Create HTTP server.
-  var server = http.createServer(app);
-
+  // var server = http.createServer(app);
+  var server = https.createServer({
+    key: fs.readFileSync('./ssl/server.key', 'utf8'),
+    cert: fs.readFileSync('./ssl/server.crt', 'utf8'),
+    requestCert: false,
+    rejectUnauthorized: false
+  }, app);
   // Listen on provided port, on all network interfaces.
   server.listen(port);
 

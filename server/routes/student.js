@@ -169,11 +169,10 @@ router.get('/exam/queryById', authStudent, async (req, res) => {
   if (exam && exam._id) {
     // set sended answer null
     exam.questions.forEach(question => {
-      question.answer = null
+      question.answer = question.type === 'multiple' ? [] : ''
     })
-    var course = await Course.findOne({ _id: exam.courseId })
-    exam.courseName = course.courseName
-    return res.json({ success: true, data: exam, message: "" })
+    var { courseName } = await Course.findOne({ _id: exam.courseId })
+    return res.json({ success: true, data: { exam, courseName }, message: "" })
   }
 
   return res.json({ success: false, message: 'Not found' })

@@ -112,6 +112,7 @@ export default {
         this.$Message.error(`submit fail`);
       }
     },
+
     countDown() {
       this.endTiming = dayjs(this.exam.endTime).diff(dayjs(), "second");
       this.timer = setInterval(() => {
@@ -125,33 +126,31 @@ export default {
       }, 1000);
     },
   },
+  
   async mounted() {
-    if (!this.exam.courseName) {
-      const examId = this.$route.params.examId;
-      await this.getExamById({ examId });
+    const examId = this.$route.params.examId;
+    await this.getExamById({ examId });
 
-      this.notStart =
-        this.processing && dayjs().isBefore(dayjs(this.exam.beginTime));
-      this.notEnd =
-        this.processing && dayjs().isBefore(dayjs(this.exam.endTime));
+    this.notStart =
+      this.processing && dayjs().isBefore(dayjs(this.exam.beginTime));
+    this.notEnd = this.processing && dayjs().isBefore(dayjs(this.exam.endTime));
 
-      if (this.notStart) {
-        this.startTiming = dayjs(this.exam.beginTime).diff(dayjs(), "second");
-        this.timer = setInterval(() => {
-          this.startTiming--;
-          if (this.startTiming <= 0) {
-            clearInterval(this.timer);
-            this.timer = null;
-            this.notStart = false;
-            this.notEnd = true;
-            this.countDown();
-          }
-        }, 1000);
-      }
+    if (this.notStart) {
+      this.startTiming = dayjs(this.exam.beginTime).diff(dayjs(), "second");
+      this.timer = setInterval(() => {
+        this.startTiming--;
+        if (this.startTiming <= 0) {
+          clearInterval(this.timer);
+          this.timer = null;
+          this.notStart = false;
+          this.notEnd = true;
+          this.countDown();
+        }
+      }, 1000);
+    }
 
-      if (this.notEnd) {
-        this.countDown();
-      }
+    if (this.notEnd) {
+      this.countDown();
     }
   },
 };

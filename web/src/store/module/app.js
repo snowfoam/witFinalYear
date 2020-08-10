@@ -16,11 +16,14 @@ import {
   uploadExcel,
   removeQuestion,
   getExams,
+  getTeacherExams,
+  getExamDetailById,
   getExamById,
   applyExam,
   startExam,
   examSubmit,
   cancleExam,
+  getStudents,
 } from '@/api/app'
 
 export default {
@@ -40,24 +43,24 @@ export default {
     },
     async createSubject({ }, params) {
       try {
-        const { data: { success, message } } = await createSubject(params)
-        return { success, message }
+        const { data } = await createSubject(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
     },
     async updateSubject({ }, params) {
       try {
-        const { data: { success, message } } = await updateSubject(params)
-        return { success, message }
+        const { data } = await updateSubject(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
     },
     async removeSubject({ }, params) {
       try {
-        const { data: { success, message } } = await removeSubject(params)
-        return { success, message }
+        const { data } = await removeSubject(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
@@ -65,7 +68,7 @@ export default {
     async getCourses() {
       try {
         const { data } = await getCourses()
-        return { success: true, list: data.data }
+        return { success: true, list: data && data.data || [] }
       } catch (err) {
         return { success: false, message: err.message }
       }
@@ -80,40 +83,40 @@ export default {
     },
     async createCourse({ }, params) {
       try {
-        const { data: { success, message } } = await createCourse(params)
-        return { success, message }
+        const { data } = await createCourse(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
     },
     async closeCourse({ }, params) {
       try {
-        const { data: { success, message } } = await closeCourse(params)
-        return { success, message }
+        const { data } = await closeCourse(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
     },
     async addCourse({ }, params) {
       try {
-        const { data: { success, message } } = await addCourse(params)
-        return { success, message }
+        const { data } = await addCourse(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
     },
     async removeCourse({ }, params) {
       try {
-        const { data: { success, message } } = await removeCourse(params)
-        return { success, message }
+        const { data } = await removeCourse(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
     },
     async cancleCourse({ }, params) {
       try {
-        const { data: { success, message } } = await cancleCourse(params)
-        return { success, message }
+        const { data } = await cancleCourse(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
@@ -129,8 +132,8 @@ export default {
 
     async createQuestion({ }, params) {
       try {
-        const { data: { success, message } } = await createQuestion(params)
-        return { success, message }
+        const { data } = await createQuestion(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
@@ -138,8 +141,8 @@ export default {
 
     async updateQuestion({ }, params) {
       try {
-        const { data: { success, message } } = await updateQuestion(params)
-        return { success, message }
+        const { data } = await updateQuestion(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
@@ -147,24 +150,46 @@ export default {
 
     async uploadExcel({ }, params) {
       try {
-        const { data: { success, message } } = await uploadExcel(params)
-        return { success, message }
+        const { data } = await uploadExcel(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
     },
     async removeQuestion({ }, params) {
       try {
-        const { data: { success, message } } = await removeQuestion(params)
-        return { success, message }
+        const { data } = await removeQuestion(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
     },
-    async getExams() {
+    async getExams({ rootState }) {
       try {
-        const { data } = await getExams()
-        return { success: true, list: data.data }
+        var userType = rootState.user.userType
+        if (userType === 'student') {
+          const { data } = await getExams()
+          return { success: true, list: data.data }
+        } else if (userType === 'teacher') {
+          const { data } = await getTeacherExams()
+          let list = []
+          data.data.forEach(item => {
+            if (item.data && item.data.length) {
+              list = list.concat(item.data)
+            }
+          })
+          return { success: true, list }
+        }
+
+        throw new Error('user type error')
+      } catch (err) {
+        return { success: false, message: err.message }
+      }
+    },
+    async getExamDetailById({ }, params) {
+      try {
+        const { data } = await getExamDetailById(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
@@ -173,7 +198,8 @@ export default {
       try {
         const { data } = await getExamById(params)
         if (data.data) {
-          state.exam = data.data
+          state.exam = data.data.exam
+          state.exam.courseName = data.data.courseName
           return { success: true, data: data.data }
         } else {
           return { success: false, message: err.message }
@@ -184,8 +210,8 @@ export default {
     },
     async applyExam({ }, params) {
       try {
-        const { data: { success, message } } = await applyExam(params)
-        return { success, message }
+        const { data } = await applyExam(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }
@@ -209,8 +235,16 @@ export default {
     },
     async cancleExam({ }, params) {
       try {
-        const { data: { success, message } } = await cancleExam(params)
-        return { success, message }
+        const { data } = await cancleExam(params)
+        return data
+      } catch (err) {
+        return { success: false, message: err.message }
+      }
+    },
+    async getStudents({ }, params) {
+      try {
+        const { data } = await getStudents(params)
+        return data
       } catch (err) {
         return { success: false, message: err.message }
       }

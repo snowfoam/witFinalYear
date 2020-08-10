@@ -23,32 +23,53 @@
         <span>{{ row.endTime ? dateFormat(row.endTime) : "" }}</span>
       </template>
       <template slot-scope="{ row, index }" slot="action">
-        <Button
-          type="primary"
-          ghost
-          size="small"
-          style="margin-right: 5px;"
-          v-if="row.status === 'nostart'"
-          @click="openStartModal(row)"
-          >start</Button
-        >
-        <Button
-          type="primary"
-          ghost
-          size="small"
-          style="margin-right: 5px;"
-          v-if="row.status === 'processing'"
-          @click="$router.push(`/exam/${row._id}`)"
-          >processing</Button
-        >
-        <Button
-          type="error"
-          size="small"
-          ghost
-          v-if="row.status === 'nostart'"
-          @click="openCancleModal(row)"
-          >cancle</Button
-        >
+        <template v-if="isTeacher">
+          <Button
+            type="primary"
+            ghost
+            size="small"
+            style="margin-right: 5px;"
+            @click="openDetailModal(row)"
+            >detail</Button
+          >
+        </template>
+        <template v-else>
+          <Button
+            type="primary"
+            ghost
+            size="small"
+            style="margin-right: 5px;"
+            v-if="row.status === 'nostart'"
+            @click="openStartModal(row)"
+            >start</Button
+          >
+          <Button
+            type="primary"
+            ghost
+            size="small"
+            style="margin-right: 5px;"
+            v-if="row.status === 'processing'"
+            @click="$router.push(`/exam/${row._id}`)"
+            >processing</Button
+          >
+          <Button
+            type="primary"
+            ghost
+            size="small"
+            style="margin-right: 5px;"
+            v-else-if="row.status === 'ended'"
+            @click="$router.push(`/exam/${row._id}`)"
+            >detail</Button
+          >
+          <Button
+            type="error"
+            size="small"
+            ghost
+            v-if="row.status === 'nostart'"
+            @click="openCancleModal(row)"
+            >cancle</Button
+          >
+        </template>
       </template>
     </Table>
 
@@ -107,6 +128,53 @@
         <Button type="error" :loading="loading" @click="cancle">cancle</Button>
       </div>
     </Modal>
+
+    <Modal v-model="showDetailModal" title="exam details" footer-hide>
+      <p>studentName: {{ exam.studentName }}</p>
+      <p>studentEmail: {{ exam.studentEmail }}</p>
+      <p>studentId: {{ exam.studentId }}</p>
+      <p>courseId: {{ exam.courseId }}</p>
+      <p>createTime: {{ exam.createTime }}</p>
+      <p>beginTime: {{ exam.beginTime }}</p>
+      <p>endTime: {{ exam.endTime }}</p>
+      <p>status: {{ exam.status }}</p>
+      <p>score: {{ exam.score }}</p>
+      <p>duration: {{ exam.duration }}</p>
+      <p>teacherId: {{ exam.teacherId }}</p>
+      <p>teacherName: {{ exam.teacherName }}</p>
+      <p>subjectName: {{ exam.subjectName }}</p>
+      <p>description: {{ exam.description }}</p>
+      <p>courseName: {{ exam.courseName }}</p>
+      <p>subjectId: {{ exam.subjectId }}</p>
+      <div
+        v-for="(question, index) in exam.questions"
+        :key="index"
+        class="question"
+      >
+        <div class="index">{{ index + 1 }}.</div>
+        <div class="article">
+          <div class="desc">{{ question.article }}</div>
+          <div v-if="question.type === 'multiple'">
+            <CheckboxGroup v-model="question.answer.toString()">
+              <Checkbox
+                :label="option + ''"
+                v-for="(option, i) in question.options"
+                :key="`${index}-${i}`"
+              ></Checkbox>
+            </CheckboxGroup>
+          </div>
+          <div v-else>
+            <RadioGroup v-model="question.answer.toString()">
+              <Radio
+                :label="option + ''"
+                v-for="(option, i) in question.options"
+                :key="`${index}-${i}`"
+              ></Radio>
+            </RadioGroup>
+          </div>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -122,6 +190,8 @@ export default {
       showApplyModal: false,
       showStartModal: false,
       showCancleModal: false,
+      showDetailModal: false,
+      exam: {},
       courses: [],
       courseObject: {},
       exams: [],
@@ -187,6 +257,7 @@ export default {
   methods: {
     ...mapActions([
       "getExams",
+      "getExamDetailById",
       "getCourses",
       "getUserCourses",
       "applyExam",
@@ -231,13 +302,19 @@ export default {
       this.formItem = row;
     },
 
+    async openDetailModal(row) {
+      const res = await this.getExamDetailById({ examId: row._id });
+      this.exam = res.data;
+      this.showDetailModal = true;
+    },
+
     async apply() {
       this.loading = true;
       const { courseId } = this.formItem;
       const { success } = await this.applyExam({ courseId });
 
       if (success) {
-        await this.$store.dispatch('getUserInfo')
+        await this.$store.dispatch("getUserInfo");
         await this.query();
         this.$Message.success("apply success");
       } else {
@@ -296,5 +373,12 @@ export default {
 <style lang="less">
 .add-btn {
   margin-bottom: 1rem;
+}
+.question {
+  display: flex;
+  margin: 1rem 0 0 0;
+}
+.index {
+  width: 20px;
 }
 </style>
