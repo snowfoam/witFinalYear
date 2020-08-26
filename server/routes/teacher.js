@@ -253,9 +253,32 @@ router.post('/question/createByUpload', authTeacher, upload.single('excel'), asy
 
     for (let index = 1; index < len; index++) {
       var obj = { subjectId }
-      first.forEach((item, i) => {
-        obj[item] = data[0].data[index][i]
-      })
+      var val = data[0].data[index]
+            if (val[1] === 'single') {
+              obj = {
+                subjectId,
+                article: val[0],
+                type: val[1],
+                options: val[2].split(','),
+                answer: val[3]
+              }
+            } else if (val[1] === 'multiple') {
+              obj = {
+                subjectId,
+                article: val[0],
+                type: val[1],
+                options: val[2].split(','),
+                answer: val[3].split(',')
+              }
+            } else if (val[1] === 'trueOrFalse') {
+              obj = {
+                subjectId,
+                article: val[0],
+                type: val[1],
+                options: [true, false],
+                answer: val[3]
+              }
+            }  
       list.push(obj)
     }
     await Question.insertMany(list)

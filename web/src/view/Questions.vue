@@ -297,6 +297,7 @@ export default {
           if (typeof item === "boolean") {
             return String(item);
           }
+          return item
         });
       }
       if (typeof cRow.answer === "boolean") {
